@@ -1,4 +1,6 @@
-import bitcharts as bits 
+import methods
+# import bitcharts as bits 
+import cointables as coin
 import mplfinance as mpf
 
 from binance.client import Client
@@ -6,18 +8,16 @@ import config
 
 def backtest(mart,title_extra=''):
 
-  chart = bits.Chart(client = Client(config.API_KEY, config.API_SECRET))
+  chart = coin.Chart(client = Client(config.API_KEY, config.API_SECRET))
 
   chart.coinGET()
-  chart.rollstats_MACD()
-  chart.regimes()
+  
+  df = methods.rollstats_MACD(chart.dataframe)
+  df = methods.regimes(df)
 
+  methods.martingale(df) if mart else None
 
-  # martingale(df) if mart else None
-  df = chart.DATAFRAME
-  bits.martingale(df) if mart else None
-
-  chart.strat_compute()
+  df = methods.strat_compute(df)
 
   'PLOTTING'
   ap = [
