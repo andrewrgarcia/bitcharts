@@ -10,15 +10,15 @@ def backtest():
   
   chart = coin.Chart(client = Client(config.API_KEY, config.API_SECRET))
 
-  chart.coin = "ETH"
+  chart.coin = "BTC"
   chart.market = "USDT"
   chart.candles = "30m"
   
   chart.coinGET(num_candles=500)
   
   df = chart.dataframe
-
-  data = methods.strat_compute_SVC(chart)
+  print(df)
+  data = methods.strat_compute_SVC(chart,lags=12)
 
   diff_rows = df['close'].shape[0] - data['strategy'].shape[0]
 

@@ -57,7 +57,17 @@ def strat_compute(df):
     return df
 
 
-def strat_compute_SVC(chart_obj):
+def strat_compute_mart(chart_obj):
+
+  df = rollstats_MACD(chart_obj.dataframe)
+  df = regimes(df)
+
+  martingale(df) if mart else None
+
+  df = strat_compute(df)
+
+
+def strat_compute_SVC(chart_obj,lags=6):
 
   df = chart_obj.dataframe
   '''COMPUTE STRATEGY -- MARKET V STRAT RESULTS '''
@@ -67,7 +77,7 @@ def strat_compute_SVC(chart_obj):
 
   '''LAGGED SIGNS OF LOG RATES OF RETURN 
   credit: Yves Hilpisch. 2018. Python for Finance: Analyze Big Financial Data (2nd. ed.). O'Reilly Media, Inc. '''
-  lags = 6
+  # lags = 6
   cols = []
   for lag in range(1, lags + 1):
     col = 'lag_{}'.format(lag)
@@ -81,7 +91,20 @@ def strat_compute_SVC(chart_obj):
   data['actual_sign'] = np.sign(data['market'])
   data['prediction'] = model.predict(data[cols])
 
-  data['strategy'] = data['prediction'] * data['market']
+  # **
+  data['accurate'] = np.where(data['actual_sign']==data['prediction'],1,0)
+  num_accurate = data['accurate'][data['accurate']>0].sum()
+  accuracy = num_accurate / data['accurate'].shape[0]
+
+  print(f"accuracy: {accuracy*100}%")
+
+  cap_gains_tax = 0.28
+  # cap_gains_tax = 0.0
+  data['strategy'] = [ data['prediction'][i] * data['market'][i] * (1 - cap_gains_tax) if data['prediction'][i] < 0 else \
+                      data['prediction'][i] * data['market'][i] * (1 - 0) for i in range(len(data['prediction'])) ]  # only taxes sale
+  
+
+  # data['strategy'] = data['prediction'] * data['market']
   data[['market','strategy']]=data[['market','strategy']].cumsum().apply(np.exp) 
 
   strategy_gain = data['strategy'].iloc[-1] - data['market'].iloc[-1]
